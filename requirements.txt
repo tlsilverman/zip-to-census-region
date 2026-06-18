@@ -1,3 +1,4 @@
 census==0.8.27
 us==3.2.0
 urllib3==2.7.0
+zipcodes==3.0.0
