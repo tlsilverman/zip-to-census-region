@@ -4,7 +4,7 @@ This script is designed to work with the SaferProducts.gov incident report CSV f
 
 You must install [python](https://www.python.org/downloads/) and [pip](https://pip.pypa.io/en/stable/installation/) for this script to function. You should already have access to pip if you installed Python.
 
-To run this script, type these commands into your terminal while within the root directory of the repository. The pip command only needs to be run once.
+To run this script, replace the API_KEY definition in constants.py.example with your own Census Bureau API key (which you can get [here](https://api.census.gov/data/key_signup.html)) and rename the file to "constants.py". Then, type these commands into your terminal while within the root directory of the repository. The pip command only needs to be run once.
 ```
 pip install -r requirements.txt
 python main.py
