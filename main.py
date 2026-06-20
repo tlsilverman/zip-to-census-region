@@ -3,7 +3,6 @@ os.environ["DC_STATEHOOD"] = "1"
 import sys
 import constants
 from census import Census
-# from us import states
 import us
 from pathlib import Path
 import urllib3
@@ -18,9 +17,13 @@ REGION_NUMBER_DICT = {
     3: "South",
     4: "West",
     9: "Puerto Rico",
-    99999: "invalid region"
+    99999: "invalid region" # 99999 is a placeholder number for an invalid region or zipcode, as 99999 is both an impossible zipcode and region number
 }
 
+# Uses the zipcodes module to fetch a state for a given zipcode. 
+# 
+# zipcode - string corresponding to the zipcode column in the CSV file.
+# returns a two-character abbreviation of a state, as the zipcodes module exports
 def get_state_from_zipcode(zipcode):
     if (len(zipcode) < 5):
        return "invalid zipcode",False
@@ -31,7 +34,6 @@ def get_state_from_zipcode(zipcode):
     if not (zipcodes.is_real(formatted_zipcode)): # for now, just skip over non-existent zip codes. TODO: if possible, use city and state name to get real zipcode
         return "non-existent zipcode",False
 
-    # print("fetching state for zipcode ", formatted_zipcode)
     return zipcodes.matching(formatted_zipcode)[0]["state"],True
 
 # check if zip/zcta crosswalk file exists, and if not, fetch the file
@@ -68,6 +70,7 @@ def zip_to_zcta(zipcode):
     return zipcode
 
 # Take a state name and return a region number based on the state's name
+# stateFile - State Object pulled from us.states.lookup() function
 def get_region_number(stateFile):
 
     c = Census(API_KEY, year=2010)
@@ -95,30 +98,30 @@ def construct_export_csv(filename):
         "non-existent zipcode": 99999
     }
     for line in reader:
-        t=line[2],line[3],line[1],line[0]
-        state = t[0]
+        t=line[2],line[3],line[1],line[0] # extract relevant regions from the csv file
+        state = t[0] # the above line can probably be removed
         zipcode = t[1]
         city = t[2]
         region = 99999
         skip = False
         region_string = ""
 
-        if ((t[0] == "") or (t[0] == "United States") or (t[0] == "Unspecified")):
+        if ((t[0] == "") or (t[0] == "United States") or (t[0] == "Unspecified")): # check for cases without a specified state, a bit naive because something could not be a state without these inputs
             temp = get_state_from_zipcode(t[1])
             if temp[1]:
                 stateFile = us.states.lookup(temp[0])
                 if stateFile is not None:
                     state = stateFile.name
 
-        if ("SaferProducts.gov" in t[3]):
+        if ("SaferProducts.gov" in t[3]): # these if statements can probably be combined
             skip = True
         if (state == "State"):
             skip = True
             region_string = "Census Region"
-        if not (state in stateRegionDict and stateRegionDict[state] == 99999):
-            if state not in stateRegionDict:
+        if not (state in stateRegionDict and stateRegionDict[state] == 99999): 
+            if state not in stateRegionDict: # check if (1) state is invalid and (2) if not, whether the state has been checked before
                 stateFile = us.states.lookup(state)
-                if stateFile is not None:
+                if stateFile is not None: # ugly code, but that's okay
                     stateName = stateFile.name
                     if stateName not in stateRegionDict:
                         stateRegionDict[stateName] = get_region_number(stateFile)
@@ -131,7 +134,7 @@ def construct_export_csv(filename):
         lineCount+=1
         if not skip:
             region_string = REGION_NUMBER_DICT[region]
-        csvEntry = t[3], city,state,zipcode,region_string
+        csvEntry = t[3], city,state,zipcode,region_string # construct exported csv row
         writer.writerow(csvEntry)
 
 def main():
